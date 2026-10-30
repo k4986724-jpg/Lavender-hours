@@ -1,0 +1,9 @@
+{
+  "name": "Lavender Hours Study Timer",
+  "short_name": "Lavender Hours",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f2edfc",
+  "theme_color": "#eee7ff",
+  "description": "A lavender Pomodoro, custom timer and study-time tracker."
+}

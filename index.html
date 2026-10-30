@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#eee7ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lavender Hours">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Lavender Hours</title>
+<style>
+:root{color-scheme:light;--ink:#382d4c;--muted:#81758f;--lav:#9878cf;--pale:#f2edfc;--line:#e7def5;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#f8f5ff,#eee7fb);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:680px;margin:auto;padding:24px 17px 40px}
+header{display:flex;justify-content:space-between;align-items:center;margin:5px 2px 20px}
+.eyebrow{font-size:11px;letter-spacing:1.5px;color:var(--muted);font-weight:700}.brand{font-size:24px;font-weight:750;margin-top:4px}.flower{font-size:30px}
+.card{background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:24px;padding:20px;margin:13px 0;box-shadow:0 8px 28px #60438b0b}
+.tabs{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-bottom:19px}
+button{font:inherit;border:0;border-radius:14px;padding:12px 15px;font-weight:650;cursor:pointer}
+.tab,.secondary{background:var(--pale);color:var(--ink)}.tab.active,.primary{background:var(--lav);color:white}
+.timer{text-align:center}.phase{font-size:12px;letter-spacing:1.3px;color:var(--muted);font-weight:750}
+.clock{font-size:clamp(58px,15vw,88px);font-weight:700;letter-spacing:-4px;font-variant-numeric:tabular-nums;margin:5px 0}
+.hint{color:var(--muted);font-size:14px;margin-bottom:18px}
+.actions{display:flex;gap:9px}.actions button{flex:1}.reset{width:50px;background:var(--pale);color:var(--ink)}
+.progress{height:9px;border-radius:20px;background:#eee8f6;overflow:hidden;margin-top:18px}.bar{height:100%;background:#b69be8;width:0;transition:width .25s}
+.small{font-size:12px;color:var(--muted);margin-top:12px}
+.breaks{display:flex;justify-content:center;gap:8px;margin-top:13px}.breaks button{font-size:12px;padding:9px 12px}
+.fields{display:flex;justify-content:center;gap:8px;align-items:center;margin:0 0 15px;flex-wrap:wrap}.fields label{font-size:12px;color:var(--muted)}
+input{width:70px;border:1px solid var(--line);border-radius:10px;padding:9px;background:white;color:var(--ink);text-align:center;font:inherit}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stats .card{margin:0}.stat-label{font-size:13px;color:var(--muted)}.stat{font-size:26px;font-weight:750;margin:5px 0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.goalbar{height:10px;background:#eee8f6;border-radius:20px;overflow:hidden;margin:12px 0 5px}.goalbar>div{height:100%;background:#a98bdc;width:0}
+.session-dots{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;font-size:22px}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}
+[hidden]{display:none!important}
+@media(min-width:600px){main{padding-top:35px}.card{padding:24px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><div class="eyebrow">YOUR PERSONAL STUDY SPACE</div><div class="brand">Lavender Hours</div></div><div class="flower">💜</div></header>
+<section class="card timer">
+ <div class="tabs" role="tablist">
+  <button class="tab active" data-mode="pomodoro">Pomodoro</button>
+  <button class="tab" data-mode="custom">Custom</button>
+  <button class="tab" data-mode="stopwatch">Stopwatch</button>
+ </div>
+ <div id="phase" class="phase">FOCUS SESSION</div>
+ <div id="clock" class="clock" role="timer" aria-live="off">50:00</div>
+ <div id="hint" class="hint">One session at a time. You've got this.</div>
+ <div id="customFields" class="fields" hidden>
+  <label>Minutes <input id="minutes" type="number" min="0" max="599" value="50"></label>
+  <label>Seconds <input id="seconds" type="number" min="0" max="59" value="0"></label>
+  <button id="setTime" class="secondary">Set time</button>
+ </div>
+ <div class="actions"><button id="start" class="primary">▶ Start</button><button id="pause" class="secondary" disabled>Ⅱ Pause</button><button id="reset" class="reset" aria-label="Reset">↺</button></div>
+ <div id="breaks" class="breaks"><button id="shortBreak" class="secondary">☕ 10 min break</button><button id="longBreak" class="secondary">🌷 20 min break</button></div>
+ <div class="progress"><div id="progress" class="bar"></div></div>
+ <div id="sessionCount" class="small">0 focus sessions completed today</div>
+</section>
+<div class="stats">
+ <section class="card"><div class="stat-label">Today's study time</div><div class="stat" id="today">0h 00m</div><div class="small">Completed focus time</div></section>
+ <section class="card"><div class="stat-label">Daily goal</div><div class="stat" id="goalText">12 hours</div><div class="small">Your target 🎯</div></section>
+</div>
+<section class="card">
+ <div class="row"><strong>Daily progress</strong><span id="percent" class="stat-label">0%</span></div>
+ <div class="goalbar"><div id="goalProgress"></div></div>
+ <div class="row"><span class="stat-label">Daily study goal</span><label class="stat-label">Hours <input id="goal" type="number" min="1" max="24" value="12"></label></div>
+</section>
+<section class="card"><strong>🌸 Focus sessions today</strong><div id="sessions" class="session-dots"><span class="stat-label">Your first session is waiting!</span></div></section>
+<footer>Small steps, big dreams. Keep going! 💜<br>Study time is saved on this device.</footer>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id), KEY='lavender-hours-v1';
+const dateKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+let saved={};try{saved=JSON.parse(localStorage.getItem(KEY)||'{}')}catch{}
+const today=()=>{const k=dateKey();if(!saved[k])saved[k]={seconds:0,sessions:0};return saved[k]};
+let mode='pomodoro',phase='focus',duration=3000,remaining=3000,running=false,deadline=0,interval=null,lastStopwatchMinute=0;
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved))}catch{}};
+const fmt=n=>{n=Math.max(0,Math.floor(n));return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`};
+function render(){
+ $('clock').textContent=fmt(remaining);
+ $('phase').textContent=mode==='stopwatch'?'STOPWATCH':phase==='focus'?'FOCUS SESSION':'BREAK TIME';
+ $('hint').textContent=mode==='stopwatch'?'Your focused time, counted up.':phase==='focus'?"One session at a time. You've got this.":'Take a breath. You deserve a break.';
+ $('start').disabled=running;$('pause').disabled=!running;
+ $('progress').style.width=mode==='stopwatch'?'0%':`${100*(duration-remaining)/Math.max(1,duration)}%`;
+ const t=today(),goal=Math.max(1,Math.min(24,Number($('goal').value)||12)),pct=Math.floor(t.seconds/(goal*3600)*100);
+ $('today').textContent=`${Math.floor(t.seconds/3600)}h ${String(Math.floor(t.seconds%3600/60)).padStart(2,'0')}m`;
+ $('sessionCount').textContent=`${t.sessions} focus sessions completed today`;
+ $('percent').textContent=`${pct}%`;$('goalProgress').style.width=`${Math.min(100,pct)}%`;$('goalText').textContent=`${goal} hours`;
+ $('sessions').innerHTML=t.sessions?Array.from({length:Math.min(12,t.sessions)},()=>'<span>🌷</span>').join('')+(t.sessions>12?`<span class="stat-label">+${t.sessions-12}</span>`:''):'<span class="stat-label">Your first session is waiting!</span>';
+}
+function stop(){running=false;clearInterval(interval);interval=null;render()}
+function tick(){
+ if(!running)return;
+ if(mode==='stopwatch'){
+  const elapsed=Math.floor((Date.now()-deadline)/1000);remaining=elapsed;
+  const mins=Math.floor(elapsed/60);
+  if(mins>lastStopwatchMinute){today().seconds+=(mins-lastStopwatchMinute)*60;lastStopwatchMinute=mins;persist()}
+ }else{
+  remaining=Math.max(0,Math.ceil((deadline-Date.now())/1000));
+  if(remaining===0){
+   if(phase==='focus'){today().seconds+=duration;today().sessions++;persist();stop();notify('Focus session complete! Great work 🌷')}
+   else{stop();notify('Break finished. Ready when you are? 💜')}
+   return;
+  }
+ }
+ render();
+}
+function start(){
+ if(running)return;
+ if(mode==='stopwatch'){deadline=Date.now()-remaining*1000;lastStopwatchMinute=Math.floor(remaining/60)}
+ else deadline=Date.now()+remaining*1000;
+ running=true;render();interval=setInterval(tick,250);
+}
+function reset(){stop();remaining=duration;render()}
+function notify(message){render();if('Notification'in window&&Notification.permission==='granted'){try{new Notification('Lavender Hours',{body:message,icon:'icon-192.png'})}catch{alert(message)}}else alert(message)}
+function setMode(m){
+ stop();mode=m;phase='focus';$('customFields').hidden=m!=='custom';$('breaks').hidden=m!=='pomodoro';
+ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+ duration=m==='stopwatch'?0:m==='pomodoro'?3000:duration;remaining=duration;render();
+}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+$('start').addEventListener('click',async()=>{if('Notification'in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch{}}start()});
+$('pause').addEventListener('click',()=>{if(!running)return;if(mode==='stopwatch')remaining=Math.floor((Date.now()-deadline)/1000);else remaining=Math.max(0,Math.ceil((deadline-Date.now())/1000));stop()});
+$('reset').addEventListener('click',reset);
+$('setTime').addEventListener('click',()=>{const m=Number($('minutes').value),s=Number($('seconds').value);if(!Number.isInteger(m)||!Number.isInteger(s)||m<0||m>599||s<0||s>59||m*60+s<1){alert('Please enter a valid duration.');return}stop();duration=m*60+s;remaining=duration;render()});
+function breakFor(min){stop();mode='pomodoro';phase='break';duration=min*60;remaining=duration;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.mode==='pomodoro'));$('breaks').hidden=false;$('customFields').hidden=true;start()}
+$('shortBreak').addEventListener('click',()=>breakFor(10));$('longBreak').addEventListener('click',()=>breakFor(20));
+$('goal').addEventListener('input',render);
+document.addEventListener('visibilitychange',()=>{if(running)tick()});
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+render();
+})();
+</script>
+</body></html>
